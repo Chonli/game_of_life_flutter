@@ -51,8 +51,8 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isRunning = false;
   Timer _loopGame;
   List<List<int>> _matrixGrid;
-  int _matrixRowSize = 30;
-  int _matrixColumnSize = 30;
+  int _matrixRowSize = 20;
+  int _matrixColumnSize = 20;
 
   @override
   void initState() {
@@ -61,27 +61,71 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void initMatrix() {
-    List<List<int>> matrix = List<List<int>>(_matrixColumnSize);
+    _matrixGrid = List<List<int>>(_matrixColumnSize);
     for (var i = 0; i < _matrixColumnSize; i++) {
       List<int> row = List<int>(_matrixRowSize);
       for (var j = 0; j < _matrixRowSize; j++) {
-        row[j] = j;
+        row[j] = 0;
       }
 
-      matrix[i] = row;
+      _matrixGrid[i] = row;
     }
   }
 
   void _startStopGame() {
     if (_isRunning) {
-    } else {}
+      _loopGame?.cancel();
+    } else {
+      _loopGame = Timer.periodic(const Duration(seconds: 2), _runGame);
+    }
 
     setState(() {
       _isRunning = !_isRunning;
+      _counterLoop = 0;
     });
   }
 
-  void _runGame() {}
+  int _testCells(int x, int y) {
+    var _nbCellNoEmpty = 0;
+    //Test cells around
+    for (var i = -1; i <= 1; i++) {
+      for (var j = -1; j < 1; j++) {
+        var tmpX = x + i, tmpY = y + j;
+        //no test current cells and out of bound cells
+        if (i == 0 && j == 0 ||
+            tmpX < 0 ||
+            tmpY < 0 ||
+            tmpX > _matrixColumnSize ||
+            tmpY > _matrixRowSize) {
+          continue;
+        }
+
+        if (_matrixGrid[tmpX][tmpY] == 1) _nbCellNoEmpty++;
+      }
+    }
+
+    if (_matrixGrid[x][y] == 0 && _nbCellNoEmpty == 3) {
+      _matrixGrid[x][y] = 1;
+    } else if (_matrixGrid[x][y] == 1 &&
+        (_nbCellNoEmpty != 3 || _nbCellNoEmpty != 2)) {
+      _matrixGrid[x][y] = 0;
+    }
+    return _matrixGrid[x][y];
+  }
+
+  void _runGame(Timer timer) {
+    var tmpCouterCells = 0;
+    for (var i = 0; i < _matrixColumnSize; i++) {
+      for (var j = 0; j < _matrixRowSize; j++) {
+        tmpCouterCells += _testCells(i, j);
+      }
+
+      setState(() {
+        _counterLoop++;
+        _counterCells = tmpCouterCells;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,13 +178,27 @@ class _MyHomePageState extends State<MyHomePage> {
     final x = (index / gridStateLength).floor();
     final y = (index % gridStateLength);
     return GestureDetector(
+      onTap: !_isRunning
+          ? () {
+              setState(() {
+                print("click {$x,$y}");
+                if (_matrixGrid[x][y] != 0) {
+                  _counterCells--;
+                  _matrixGrid[x][y] = 0;
+                } else {
+                  _counterCells++;
+                  _matrixGrid[x][y] = 1;
+                }
+              });
+            }
+          : null,
       child: GridTile(
         child: Container(
           decoration: BoxDecoration(
               border: Border.all(color: Colors.black, width: 0.5)),
           child: Center(
             child: Container(
-              color: Colors.blue,
+              color: _matrixGrid[x][y] == 1 ? Colors.blue : Colors.white,
             ),
           ),
         ),
