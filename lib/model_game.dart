@@ -3,7 +3,6 @@ import 'dart:math';
 class ModelGame {
   final int columnSize;
   final int rowSize;
-  int counterCells = 0;
   List<int> _matrixGrid;
 
   ModelGame(this.columnSize, this.rowSize) {
@@ -16,6 +15,7 @@ class ModelGame {
 
   void applyModel(List<Point> list) {
     _razMatrix();
+    list.forEach((p) => _matrixGrid[p.x + rowSize * p.y] = 1);
   }
 
   void generateRandomGrid() {
@@ -77,5 +77,6 @@ class ModelGame {
         }
       }
     }
+    _matrixGrid = tmpmatrixGrid;
   }
 }

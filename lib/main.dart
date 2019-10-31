@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:game_of_life_flutter/model_game.dart';
-import 'package:game_of_life_flutter/const_var.dart';
+import 'model_game.dart';
+import 'const_var.dart';
 
 void main() => runApp(MyApp());
 
@@ -54,21 +54,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _runGame(Timer timer) {
-    _model.generateNextModelState();
     setState(() {
+      _model.generateNextModelState();
       _counterLoop++;
-      _counterCells = _model.counterCells;
+      _counterCells = _model.getCellAlive();
     });
   }
 
-  void _select(String selectItem) {
-    print("select=$selectItem");
-    if (ConstVar.menu.indexOf(selectItem) == 0) {
+  void _select(CustomMenuItem selectItem) {
+    if (selectItem.list == null) {
       //aléatoire case
       _model.generateRandomGrid();
     } else {
-      //_model.applyModel(list)
+      _model.applyModel(selectItem.list);
     }
+    setState(() {
+      _counterCells = _model.getCellAlive();
+    });
   }
 
   @override
@@ -77,13 +79,13 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
         actions: <Widget>[
-          PopupMenuButton<String>(
+          PopupMenuButton<CustomMenuItem>(
             onSelected: _select,
             itemBuilder: (BuildContext context) {
-              return ConstVar.menu.map((String item) {
-                return PopupMenuItem<String>(
+              return ConstVar.menu.map((CustomMenuItem item) {
+                return PopupMenuItem(
                   value: item,
-                  child: Text(item),
+                  child: Text(item.title),
                 );
               }).toList();
             },
@@ -141,9 +143,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 if (_model.getCellValue(x, y) != 0) {
                   _model.setCellValue(x, y, 0);
                 } else {
-                  _counterCells++;
                   _model.setCellValue(x, y, 1);
                 }
+                _counterCells = _model.getCellAlive();
               });
             }
           : null,
@@ -153,7 +155,8 @@ class _MyHomePageState extends State<MyHomePage> {
               border: Border.all(color: Colors.black, width: 0.5)),
           child: Center(
             child: Container(
-              color: _matrixGrid[x][y] == 1 ? Colors.blue : Colors.white,
+              color:
+                  _model.getCellValue(x, y) == 1 ? Colors.blue : Colors.white,
             ),
           ),
         ),
