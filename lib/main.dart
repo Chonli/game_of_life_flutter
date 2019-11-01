@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'model_game.dart';
+import 'const_var.dart';
 
 void main() => runApp(MyApp());
 
@@ -27,23 +29,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counterLoop = 0;
-  int _counterCells = 0;
+  ModelGame _model;
+  int _counterLoop = 0, _counterCells = 0;
   bool _isRunning = false;
   Timer _loopGame;
-  List<List<int>> _matrixGrid;
-  int _matrixRowSize = 25;
-  int _matrixColumnSize = 25;
 
   @override
   void initState() {
     super.initState();
-    initMatrix();
-  }
-
-  void initMatrix() {
-    _matrixGrid = List.generate(
-        _matrixColumnSize, (_) => List.generate(_matrixRowSize, (_) => 0));
+    _model = ModelGame(25, 25);
   }
 
   void _startStopGame() {
@@ -60,52 +54,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _runGame(Timer timer) {
-    final tmpmatrixGrid = List.generate(
-        _matrixColumnSize, (_) => List.generate(_matrixRowSize, (_) => 0));
-    var tmpCouterCells = 0;
-    for (var x = 0; x < _matrixColumnSize; x++) {
-      for (var y = 0; y < _matrixRowSize; y++) {
-        var nbCellNoEmpty = 0;
-        //Test cells around
-        for (var i = -1; i <= 1; i++) {
-          for (var j = -1; j <= 1; j++) {
-            var tmpX = x + i, tmpY = y + j;
-            //no test current cells and out of bound cells
-            if ((i == 0 && j == 0) ||
-                tmpX < 0 ||
-                tmpY < 0 ||
-                tmpX >= _matrixColumnSize ||
-                tmpY >= _matrixRowSize) {
-              continue;
-            }
+    setState(() {
+      _model.generateNextModelState();
+      _counterLoop++;
+      _counterCells = _model.getCellAlive();
+    });
+  }
 
-            if (_matrixGrid[tmpX][tmpY] == 1) {
-              nbCellNoEmpty++;
-            }
-          }
-        }
-
-        if (_matrixGrid[x][y] == 0 && nbCellNoEmpty == 3) {
-          tmpmatrixGrid[x][y] = 1;
-          tmpCouterCells++;
-        } else if (_matrixGrid[x][y] == 1 &&
-            (nbCellNoEmpty > 3 || nbCellNoEmpty < 2)) {
-          tmpmatrixGrid[x][y] = 0;
-        } else {
-          tmpmatrixGrid[x][y] = _matrixGrid[x][y];
-          if (_matrixGrid[x][y] == 1) {
-            tmpCouterCells++;
-          }
-        }
-
-        print(
-            "[$x,$y] ${_matrixGrid[x][y]} ==[$nbCellNoEmpty]=> ${tmpmatrixGrid[x][y]}");
-      }
+  void _select(CustomMenuItem selectItem) {
+    if (selectItem.list == null) {
+      //aléatoire case
+      _model.generateRandomGrid();
+    } else {
+      _model.applyModel(selectItem.list);
     }
     setState(() {
-      _counterLoop++;
-      _counterCells = tmpCouterCells;
-      _matrixGrid = tmpmatrixGrid;
+      _counterCells = _model.getCellAlive();
     });
   }
 
@@ -114,6 +78,19 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: <Widget>[
+          PopupMenuButton<CustomMenuItem>(
+            onSelected: _select,
+            itemBuilder: (BuildContext context) {
+              return ConstVar.menu.map((CustomMenuItem item) {
+                return PopupMenuItem(
+                  value: item,
+                  child: Text(item.title),
+                );
+              }).toList();
+            },
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -137,10 +114,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     border: Border.all(color: Colors.black, width: 2.0)),
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: _matrixRowSize,
+                    crossAxisCount: _model.rowSize,
                   ),
                   itemBuilder: _buildGridItems,
-                  itemCount: _matrixRowSize * _matrixColumnSize,
+                  itemCount: _model.rowSize * _model.columnSize,
                 ),
               ),
             ),
@@ -156,20 +133,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildGridItems(BuildContext context, int index) {
-    final x = (index / _matrixRowSize).floor();
-    final y = (index % _matrixColumnSize);
+    final x = (index / _model.rowSize).floor();
+    final y = (index % _model.columnSize);
     return GestureDetector(
       onTap: !_isRunning
           ? () {
               setState(() {
                 print("click {$x,$y}");
-                if (_matrixGrid[x][y] != 0) {
-                  _counterCells--;
-                  _matrixGrid[x][y] = 0;
+                if (_model.getCellValue(x, y) != 0) {
+                  _model.setCellValue(x, y, 0);
                 } else {
-                  _counterCells++;
-                  _matrixGrid[x][y] = 1;
+                  _model.setCellValue(x, y, 1);
                 }
+                _counterCells = _model.getCellAlive();
               });
             }
           : null,
@@ -179,7 +155,8 @@ class _MyHomePageState extends State<MyHomePage> {
               border: Border.all(color: Colors.black, width: 0.5)),
           child: Center(
             child: Container(
-              color: _matrixGrid[x][y] == 1 ? Colors.blue : Colors.white,
+              color:
+                  _model.getCellValue(x, y) == 1 ? Colors.blue : Colors.white,
             ),
           ),
         ),
