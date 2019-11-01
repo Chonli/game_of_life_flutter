@@ -6,15 +6,15 @@ class ModelGame {
   List<int> _matrixGrid;
 
   ModelGame(this.columnSize, this.rowSize) {
-    _razMatrix();
+    razMatrix();
   }
 
-  void _razMatrix() {
+  void razMatrix() {
     _matrixGrid = List.generate(columnSize * rowSize, (_) => 0);
   }
 
   void applyModel(List<Point> list) {
-    _razMatrix();
+    razMatrix();
     list.forEach((p) => _matrixGrid[p.x + rowSize * p.y] = 1);
   }
 

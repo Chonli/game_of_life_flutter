@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'model_game.dart';
 import 'const_var.dart';
 
@@ -9,6 +10,10 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     return MaterialApp(
       title: 'Game of life',
       theme: ThemeData(
@@ -40,7 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _model = ModelGame(25, 25);
   }
 
-  void _startStopGame() {
+  void _startPauseGame() {
     if (_isRunning) {
       _loopGame?.cancel();
     } else {
@@ -49,7 +54,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {
       _isRunning = !_isRunning;
+    });
+  }
+
+  void _resetGame() {
+    _model.razMatrix();
+    _loopGame?.cancel();
+    setState(() {
       _counterLoop = 0;
+      _counterCells = 0;
+      _isRunning = false;
     });
   }
 
@@ -124,11 +138,23 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _startStopGame,
-        tooltip: _isRunning ? 'Stop' : 'Start',
-        child: Icon(_isRunning ? Icons.stop : Icons.play_arrow),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton:
+          Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+        FloatingActionButton(
+          onPressed: _resetGame,
+          tooltip: 'Reset',
+          child: Icon(Icons.replay),
+        ),
+        Padding(
+          padding: EdgeInsets.all(3.0),
+        ),
+        FloatingActionButton(
+          onPressed: _startPauseGame,
+          tooltip: _isRunning ? 'Pause' : 'Start',
+          child: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
+        ),
+      ]),
     );
   }
 
