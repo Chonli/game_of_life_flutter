@@ -13,9 +13,14 @@ class ModelGame {
     _matrixGrid = List.generate(columnSize * rowSize, (_) => 0);
   }
 
-  void applyModel(List<Point> list) {
+  void applyModel(int w, int h, List<Point> list) {
     razMatrix();
-    list.forEach((p) => _matrixGrid[p.x + rowSize * p.y] = 1);
+    //calcul center grid
+    int centerX = ((rowSize - w) / 2).round();
+    int centerY = ((columnSize - h) / 2).round();
+    print(centerX);
+    list.forEach(
+        (p) => _matrixGrid[p.x + centerX + (rowSize * (centerY + p.y))] = 1);
   }
 
   void generateRandomGrid() {

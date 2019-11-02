@@ -76,11 +76,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _select(CustomMenuItem selectItem) {
+    if (_isRunning) _resetGame();
+
     if (selectItem.list == null) {
       //aléatoire case
       _model.generateRandomGrid();
     } else {
-      _model.applyModel(selectItem.list);
+      _model.applyModel(selectItem.width, selectItem.height, selectItem.list);
     }
     setState(() {
       _counterCells = _model.getCellAlive();
@@ -159,8 +161,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildGridItems(BuildContext context, int index) {
-    final x = (index / _model.rowSize).floor();
-    final y = (index % _model.columnSize);
+    final y = (index / _model.rowSize).floor();
+    final x = (index % _model.columnSize);
     return GestureDetector(
       onTap: !_isRunning
           ? () {
