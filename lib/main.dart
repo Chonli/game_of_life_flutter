@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_sparkline/flutter_sparkline.dart';
 import 'model_game.dart';
 import 'const_var.dart';
 import 'random_picker_dialog.dart';
@@ -40,6 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isRunning = false;
   Timer _loopGame;
   double _randomThreshold = 0.75;
+  List<double> _historicList = [0.0];
 
   @override
   void initState() {
@@ -60,6 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _resetGame() {
+    _historicList = [0.0];
     _model.razMatrix();
     _loopGame?.cancel();
     setState(() {
@@ -74,10 +77,11 @@ class _MyHomePageState extends State<MyHomePage> {
       _model.generateNextModelState();
       _counterLoop++;
       _counterCells = _model.getCellAlive();
+      _historicList.add(_counterCells.roundToDouble());
     });
   }
 
-  void _showRandomPickerDialog() async {
+  Future<void> _showRandomPickerDialog() async {
     final selectedFontSize = await showDialog<double>(
       context: context,
       builder: (context) =>
@@ -125,6 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -152,6 +157,20 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(5.0),
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black, width: 1)),
+                child: Sparkline(
+                  fallbackHeight: 12.0,
+                  data: _historicList,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(5.0),
+            )
           ],
         ),
       ),
