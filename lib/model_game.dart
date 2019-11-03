@@ -23,9 +23,9 @@ class ModelGame {
         (p) => _matrixGrid[p.x + centerX + (rowSize * (centerY + p.y))] = 1);
   }
 
-  void generateRandomGrid() {
-    _matrixGrid = List.generate(
-        columnSize * rowSize, (_) => (Random().nextDouble() > 0.75) ? 1 : 0);
+  void generateRandomGrid(double threshold) {
+    _matrixGrid = List.generate(columnSize * rowSize,
+        (_) => (Random().nextDouble() > threshold) ? 1 : 0);
   }
 
   int getCellAlive() {

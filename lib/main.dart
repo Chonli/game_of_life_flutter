@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'model_game.dart';
 import 'const_var.dart';
+import 'random_picker_dialog.dart';
 
 void main() => runApp(MyApp());
 
@@ -38,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counterLoop = 0, _counterCells = 0;
   bool _isRunning = false;
   Timer _loopGame;
+  double _randomThreshold = 0.75;
 
   @override
   void initState() {
@@ -75,12 +77,25 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _select(CustomMenuItem selectItem) {
+  void _showRandomPickerDialog() async {
+    final selectedFontSize = await showDialog<double>(
+      context: context,
+      builder: (context) =>
+          RandomPickerDialog(initialRandomThreshold: _randomThreshold),
+    );
+
+    if (selectedFontSize != null) {
+      _randomThreshold = selectedFontSize;
+    }
+  }
+
+  void _select(CustomMenuItem selectItem) async {
     if (_isRunning) _resetGame();
 
     if (selectItem.list == null) {
       //aléatoire case
-      _model.generateRandomGrid();
+      await _showRandomPickerDialog();
+      _model.generateRandomGrid(_randomThreshold);
     } else {
       _model.applyModel(selectItem.width, selectItem.height, selectItem.list);
     }
