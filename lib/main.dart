@@ -36,6 +36,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   ModelGame _model;
   int _counterLoop = 0, _counterCells = 0;
   bool _isRunning = false;
@@ -46,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _model = ModelGame(25, 25);
+    _model = ModelGame(30, 30);
   }
 
   void _startPauseGame() {
@@ -111,21 +112,44 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(widget.title),
-        actions: <Widget>[
-          PopupMenuButton<CustomMenuItem>(
-            onSelected: _select,
-            itemBuilder: (BuildContext context) {
-              return ConstVar.menu.map((CustomMenuItem item) {
-                return PopupMenuItem(
-                  value: item,
-                  child: Text(item.title),
+        leading: IconButton(
+          icon: Icon(Icons.menu, color: Colors.white),
+          onPressed: () => _scaffoldKey.currentState.openDrawer(),
+        ),
+      ),
+      drawer: Drawer(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DrawerHeader(
+              child: Text(
+                'Figure list',
+                style: TextStyle(fontSize: 18),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.blueAccent,
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: ConstVar.menu.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  child: ListTile(
+                    title: Text(ConstVar.menu[index].title),
+                    onTap: () {
+                      _select(ConstVar.menu[index]);
+                      Navigator.of(context).pop();
+                    },
+                  ),
                 );
-              }).toList();
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
       body: Center(
         child: Column(

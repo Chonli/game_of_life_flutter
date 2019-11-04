@@ -18,7 +18,6 @@ class ModelGame {
     //calcul center grid
     int centerX = ((rowSize - w) / 2).round();
     int centerY = ((columnSize - h) / 2).round();
-    print(centerX);
     list.forEach(
         (p) => _matrixGrid[p.x + centerX + (rowSize * (centerY + p.y))] = 1);
   }
@@ -50,38 +49,36 @@ class ModelGame {
 
   void generateNextModelState() {
     final tmpmatrixGrid = List.generate(columnSize * rowSize, (_) => 0);
-    for (var x = 0; x < columnSize; x++) {
-      for (var y = 0; y < rowSize; y++) {
-        var nbCellNoEmpty = 0;
-        //Test cells around
-        for (var i = -1; i <= 1; i++) {
-          for (var j = -1; j <= 1; j++) {
-            var tmpX = x + i, tmpY = y + j;
-            //no test current cells and out of bound cells
-            if ((i == 0 && j == 0) ||
-                tmpX < 0 ||
-                tmpY < 0 ||
-                tmpX >= columnSize ||
-                tmpY >= rowSize) {
-              continue;
-            }
+    _matrixGrid.asMap().forEach((index, cellValue) {
+      var nbCellNoEmpty = 0;
+      final y = (index / rowSize).floor();
+      final x = (index % columnSize);
+      final xm1 = x - 1 < 0 ? rowSize - 1 : x - 1;
+      final xp1 = x + 1 >= rowSize ? 0 : x + 1;
+      final ym1 = y - 1 < 0 ? columnSize - 1 : y - 1;
+      final yp1 = y + 1 >= columnSize ? 0 : y + 1;
 
-            if (_matrixGrid[tmpX + rowSize * tmpY] == 1) {
-              nbCellNoEmpty++;
-            }
-          }
-        }
+      [
+        Point(xm1, ym1),
+        Point(xm1, y),
+        Point(xm1, yp1),
+        Point(x, ym1),
+        Point(x, yp1),
+        Point(xp1, ym1),
+        Point(xp1, y),
+        Point(xp1, yp1),
+      ].forEach((cell) {
+        if (_matrixGrid[cell.x + rowSize * cell.y] == 1) nbCellNoEmpty++;
+      });
 
-        if (_matrixGrid[x + rowSize * y] == 0 && nbCellNoEmpty == 3) {
-          tmpmatrixGrid[x + rowSize * y] = 1;
-        } else if (_matrixGrid[x + rowSize * y] == 1 &&
-            (nbCellNoEmpty > 3 || nbCellNoEmpty < 2)) {
-          tmpmatrixGrid[x + rowSize * y] = 0;
-        } else {
-          tmpmatrixGrid[x + rowSize * y] = _matrixGrid[x + rowSize * y];
-        }
+      if (cellValue == 0 && nbCellNoEmpty == 3) {
+        tmpmatrixGrid[index] = 1;
+      } else if (cellValue == 1 && (nbCellNoEmpty > 3 || nbCellNoEmpty < 2)) {
+        tmpmatrixGrid[index] = 0;
+      } else {
+        tmpmatrixGrid[index] = cellValue;
       }
-    }
+    });
     _matrixGrid = tmpmatrixGrid;
   }
 }
