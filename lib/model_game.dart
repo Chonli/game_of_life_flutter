@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 class ModelGame {
@@ -29,6 +30,19 @@ class ModelGame {
 
   int getCellAlive() {
     return _matrixGrid.fold(0, (a, b) => a + b);
+  }
+
+  void writeInFile(String pathFile) {
+    final file = File(pathFile);
+    String text = 'static var sav = [\n';
+    _matrixGrid.asMap().forEach((index, cellValue) {
+      final y = (index / rowSize).floor();
+      final x = (index % columnSize);
+      if (cellValue == 1) text += 'Point($x, $y),\n';
+    });
+    text += '];';
+    file.writeAsString(text);
+    print("save in file $pathFile");
   }
 
   int getCellValue(int x, int y) {

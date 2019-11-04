@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sparkline/flutter_sparkline.dart';
+import 'package:path_provider/path_provider.dart';
 import 'model_game.dart';
 import 'const_var.dart';
 import 'random_picker_dialog.dart';
@@ -94,16 +95,23 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _saveInFile(BuildContext context) async {
+    if (_isRunning) _startPauseGame();
+
+    final directory = await getExternalStorageDirectory();
+    _model.writeInFile(
+        '${directory.path}/savGOF_${_counterCells}_$_counterLoop.txt');
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text(
+          "Donnée sauver dans '${directory.path}/savGOF_${_counterCells}_$_counterLoop.txt'"),
+    ));
+  }
+
   void _select(CustomMenuItem selectItem) async {
     if (_isRunning) _resetGame();
 
-    if (selectItem.list == null) {
-      //aléatoire case
-      await _showRandomPickerDialog();
-      _model.generateRandomGrid(_randomThreshold);
-    } else {
-      _model.applyModel(selectItem.width, selectItem.height, selectItem.list);
-    }
+    _model.applyModel(selectItem.width, selectItem.height, selectItem.list);
+
     setState(() {
       _counterCells = _model.getCellAlive();
     });
@@ -120,37 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
           onPressed: () => _scaffoldKey.currentState.openDrawer(),
         ),
       ),
-      drawer: Drawer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DrawerHeader(
-              child: Text(
-                'Figure list',
-                style: TextStyle(fontSize: 18),
-              ),
-              decoration: BoxDecoration(
-                color: Colors.blueAccent,
-              ),
-            ),
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: ConstVar.menu.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  child: ListTile(
-                    title: Text(ConstVar.menu[index].title),
-                    onTap: () {
-                      _select(ConstVar.menu[index]);
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: _buildDrawer(context),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -246,6 +224,71 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DrawerHeader(
+            child: Text(
+              'Menu',
+              style: TextStyle(fontSize: 18),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent,
+            ),
+          ),
+          ListView(
+            primary: true,
+            shrinkWrap: true,
+            children: [
+              GestureDetector(
+                child: ListTile(
+                  title: Text("Sauver dans un fichier..."),
+                ),
+                onTap: () {
+                  _saveInFile(context);
+                  Navigator.of(context).pop();
+                },
+              ),
+              GestureDetector(
+                child: ListTile(
+                  title: Text("Aléatoire"),
+                ),
+                onTap: () async {
+                  if (_isRunning) _resetGame();
+
+                  await _showRandomPickerDialog();
+                  _model.generateRandomGrid(_randomThreshold);
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _counterCells = _model.getCellAlive();
+                  });
+                },
+              ),
+              Divider(),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: ConstVar.menu.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    child: ListTile(
+                      title: Text(ConstVar.menu[index].title),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _select(ConstVar.menu[index]);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
