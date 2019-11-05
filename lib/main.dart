@@ -40,10 +40,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   ModelGame _model;
   int _counterLoop = 0, _counterCells = 0;
-  bool _isRunning = false;
+  bool _isRunning = false, _autoStop = true;
   Timer _loopGame;
   double _randomThreshold = 0.75;
-  List<double> _historicList = [0.0];
+  List<double> _historicList = [];
 
   @override
   void initState() {
@@ -64,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _resetGame() {
-    _historicList = [0.0];
+    _historicList = [];
     _model.razMatrix();
     _loopGame?.cancel();
     setState(() {
@@ -75,12 +75,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _runGame(Timer timer) {
+    _model.generateNextModelState();
     setState(() {
-      _model.generateNextModelState();
       _counterLoop++;
       _counterCells = _model.getCellAlive();
       _historicList.add(_counterCells.roundToDouble());
     });
+
+    //auto pause if keep same number of cell on 4 last turn
+    if (_autoStop &&
+        _isRunning &&
+        _historicList.isNotEmpty &&
+        _historicList.length > 5 &&
+        _historicList
+            .sublist(_historicList.length - 5)
+            .every((test) => test == _historicList.last)) {
+      _startPauseGame();
+    }
   }
 
   Future<void> _showRandomPickerDialog() async {
@@ -164,10 +175,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(5.0),
                 decoration: BoxDecoration(
                     border: Border.all(color: Colors.black, width: 1)),
-                child: Sparkline(
-                  fallbackHeight: 12.0,
-                  data: _historicList,
-                ),
+                child: _historicList.isNotEmpty
+                    ? Sparkline(
+                        fallbackHeight: 12.0,
+                        data: _historicList,
+                      )
+                    : Container(),
               ),
             ),
             Padding(
@@ -176,9 +189,9 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton:
-          Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         FloatingActionButton(
           onPressed: _resetGame,
           tooltip: 'Reset',
@@ -230,8 +243,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ListView(
+        shrinkWrap: true,
         children: [
           DrawerHeader(
             child: Text(
@@ -242,51 +255,57 @@ class _MyHomePageState extends State<MyHomePage> {
               color: Colors.blueAccent,
             ),
           ),
-          ListView(
-            primary: true,
-            shrinkWrap: true,
-            children: [
-              GestureDetector(
-                child: ListTile(
-                  title: Text("Sauver dans un fichier..."),
+          ListTile(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Text("AutoStop"),
+                Checkbox(
+                  value: _autoStop,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _autoStop = value;
+                    });
+                  },
                 ),
-                onTap: () {
-                  _saveInFile(context);
-                  Navigator.of(context).pop();
-                },
-              ),
-              GestureDetector(
-                child: ListTile(
-                  title: Text("Aléatoire"),
-                ),
-                onTap: () async {
-                  if (_isRunning) _resetGame();
+              ],
+            ),
+          ),
+          ListTile(
+            title: Text("Sauver dans un fichier..."),
+            onTap: () {
+              _saveInFile(context);
+              Navigator.of(context).pop();
+            },
+          ),
+          ListTile(
+            title: Text("Aléatoire"),
+            onTap: () async {
+              if (_isRunning) _resetGame();
 
-                  await _showRandomPickerDialog();
-                  _model.generateRandomGrid(_randomThreshold);
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _counterCells = _model.getCellAlive();
-                  });
-                },
-              ),
-              Divider(),
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: ConstVar.menu.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    child: ListTile(
-                      title: Text(ConstVar.menu[index].title),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        _select(ConstVar.menu[index]);
-                      },
-                    ),
-                  );
-                },
-              ),
-            ],
+              await _showRandomPickerDialog();
+              _model.generateRandomGrid(_randomThreshold);
+              Navigator.of(context).pop();
+              setState(() {
+                _counterCells = _model.getCellAlive();
+              });
+            },
+          ),
+          Divider(),
+          ListView(
+            primary: false,
+            shrinkWrap: true,
+            children: ConstVar.menu.map(
+              (item) {
+                return ListTile(
+                  title: Text(item.title),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _select(item);
+                  },
+                );
+              },
+            ).toList(),
           ),
         ],
       ),
