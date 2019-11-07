@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_sparkline/flutter_sparkline.dart';
 import 'package:path_provider/path_provider.dart';
+import 'chart_painter.dart';
 import 'model_game.dart';
 import 'const_var.dart';
 import 'random_picker_dialog.dart';
@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isRunning = false, _autoStop = true;
   Timer _loopGame;
   double _randomThreshold = 0.75;
-  List<double> _historicList = [];
+  List<int> _historicList = [];
 
   @override
   void initState() {
@@ -79,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _counterLoop++;
       _counterCells = _model.getCellAlive();
-      _historicList.add(_counterCells.roundToDouble());
+      _historicList.add(_counterCells);
     });
 
     //auto pause if keep same number of cell on 4 last turn
@@ -130,6 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final Size _deviceSize = MediaQuery.of(context).size;
+    final ChartPainter painter = ChartPainter(_historicList);
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -138,6 +140,16 @@ class _MyHomePageState extends State<MyHomePage> {
           icon: Icon(Icons.menu, color: Colors.white),
           onPressed: () => _scaffoldKey.currentState.openDrawer(),
         ),
+        actions: <Widget>[
+          IconButton(
+            onPressed: _resetGame,
+            icon: Icon(Icons.replay),
+          ),
+          IconButton(
+            onPressed: _startPauseGame,
+            icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
+          ),
+        ],
       ),
       drawer: _buildDrawer(context),
       body: Center(
@@ -175,12 +187,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(5.0),
                 decoration: BoxDecoration(
                     border: Border.all(color: Colors.black, width: 1)),
-                child: _historicList.isNotEmpty
-                    ? Sparkline(
-                        fallbackHeight: 12.0,
-                        data: _historicList,
-                      )
-                    : Container(),
+                child: CustomPaint(
+                  painter: painter,
+                  size: Size(
+                    _deviceSize.width,
+                    200,
+                  ),
+                ),
               ),
             ),
             Padding(
@@ -189,23 +202,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton:
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        FloatingActionButton(
-          onPressed: _resetGame,
-          tooltip: 'Reset',
-          child: Icon(Icons.replay),
-        ),
-        Padding(
-          padding: EdgeInsets.all(3.0),
-        ),
-        FloatingActionButton(
-          onPressed: _startPauseGame,
-          tooltip: _isRunning ? 'Pause' : 'Start',
-          child: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
-        ),
-      ]),
     );
   }
 
