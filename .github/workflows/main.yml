@@ -1,0 +1,17 @@
+name: CI
+
+on: 
+ push:
+    branches:
+    - master
+    - release/*
+    
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Flutter CLI
+    - uses: steebchen/flutter@v1.0.0
+      
