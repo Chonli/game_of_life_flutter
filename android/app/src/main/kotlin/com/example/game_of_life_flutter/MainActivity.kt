@@ -1,4 +1,4 @@
-package com.example.game_of_life_flutter
+package com.chonli.game_of_life_flutter
 
 import android.os.Bundle
 
